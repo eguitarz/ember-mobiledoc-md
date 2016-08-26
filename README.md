@@ -1,6 +1,6 @@
 # Ember-mobiledoc-md
 
-This README outlines the details of collaborating on this Ember addon.
+Ember addon to make mobiliedoc editor support minimal markdown syntax
 
 ## Installation
 
