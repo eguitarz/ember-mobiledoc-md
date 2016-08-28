@@ -1,5 +1,12 @@
 import Ember from 'ember';
 
+function extractMarkupsAndText(range) {
+  let { tail: { section } } = range;
+  let { markers: { tail: { markups: markups, text } } } = section;
+
+  return [markups, text];
+}
+
 export default Ember.Mixin.create({
   actions: {
     setup(editor) {
@@ -16,10 +23,9 @@ export default Ember.Mixin.create({
           editor.run(postEditor => {
             const marker = 'em';
             let position = postEditor.deleteRange(range);
-            let em = postEditor.builder.createMarkup(marker);
-            let nextPosition = postEditor.insertTextWithMarkup(position, matched, [em]);
+            let markup = postEditor.builder.createMarkup(marker);
+            let nextPosition = postEditor.insertTextWithMarkup(position, matched, [markup]);
             requestAnimationFrame(() => { editor.toggleMarkup(marker) });
-            // postEditor.insertTextWithMarkup(nextPosition, ' ', []); // insert the un-marked-up space
           });
         }
       });
@@ -28,11 +34,10 @@ export default Ember.Mixin.create({
         let { builder, cursor } = editor;
 
         editor.run(postEditor => {
-          let { tail: { section } } = range;
-          let { markers: { tail: { markups: markups, text } } } = section;
+          let [markups, text] = extractMarkupsAndText(range);
 
           if (markups.length === 1) {
-            let [ markup ] = markups;
+            let [markup] = markups;
 
             if (direction === -1 && range.isCollapsed && markup.tagName === 'em') {
               range = range.extend(-1 * (text.length));
@@ -44,13 +49,13 @@ export default Ember.Mixin.create({
 
       editor.didDelete((range, direction, unit) => {
         editor.run(postEditor => {
-          let { tail: { section } } = range;
-          let { markers: { tail: { markups: markups} } } = section;
+          let [markups] = extractMarkupsAndText(range);
 
           if (token) {
-            let [ markup ] = markups;
+            let [markup] = markups;
             // deleted one unit, so move forward one unit and shink the range by 1 unit
-            range = range.move(-1).extend(-1);
+            let extendLength = token.length > 1 ? token.length - 1 : 0;
+            range = range.move(-1).extend(-1 * extendLength);
             let position = postEditor.deleteRange(range);
             postEditor.setRange(position);
             postEditor.insertTextWithMarkup(position, `*${token}*`, []);
