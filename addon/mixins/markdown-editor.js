@@ -102,7 +102,7 @@ class Strategy {
 export default Ember.Mixin.create({
   actions: {
     setup(editor) {
-      let tagNames = ['strong', 'em', 'h1'];
+      let tagNames = ['strong', 'em'];
 
       tagNames
         .map(tag => (new Strategy(tag, editor)) )
