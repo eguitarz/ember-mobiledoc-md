@@ -1,10 +1,21 @@
 import Ember from 'ember';
 
 function extractMarkupsAndText(range) {
-  let { tail: { section } } = range;
-  let { markers: { tail: { markups: markups, text } } } = section;
+  let { head, tail, tail: { section, offset } } = range;
+  let marker = tail ? tail.marker : head.marker;
+  let markups = [];
+  let text = '';
 
-  return [markups, text];
+  if (marker) {
+    markups = marker.markups;
+    text = marker.text;
+  }
+  // let { markers: {
+  //   tail: { markups: markups, text },
+  //   head: { markups: headMarkups, text: headText }
+  // } } = section;
+
+  return [markups, text, tail.isTail(), marker && offset === marker.length];
 }
 
 class Strategy {
@@ -30,12 +41,12 @@ class Strategy {
 
     function _willDeleteCallback(range, direction, tagName) {
       editor.run(postEditor => {
-        let [markups, text] = extractMarkupsAndText(range);
+        let [markups, text, isTail, isTailOfMarker] = extractMarkupsAndText(range);
 
         if (markups.length === 1) {
           let [markup] = markups;
 
-          if (direction === -1 && range.isCollapsed && markup.tagName === tagName) {
+          if ((isTail || isTailOfMarker) && markup.tagName === tagName && direction === -1 && range.isCollapsed) {
             token = text;
           }
         }
